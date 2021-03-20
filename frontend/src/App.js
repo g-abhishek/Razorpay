@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import logo from './logo.svg'
 import './App.css'
+import axios from 'axios'
 
 function loadScript(src) {
 	return new Promise((resolve) => {
@@ -80,9 +81,16 @@ function App() {
 			image: "/your_logo.png",
 			handler: function(response) {
 				console.log(response)
-				alert(response.razorpay_payment_id)
-				alert(response.razorpay_subscription_id)
-				alert(response.razorpay_signature);
+				// alert(response.razorpay_payment_id)
+				// alert(response.razorpay_subscription_id)
+				// alert(response.razorpay_signature);
+				
+				axios.post(`http://localhost:1337/handler/verification/${data.id}`, response).then(result => {
+					console.log(result.data)
+				}).catch(error => {
+					console.log(error)
+				})
+				
 
 			},
 			prefill: {
