@@ -25,31 +25,62 @@ app.post('/verification', (req, res) => {
 	console.log("callback: ", req.body)
 	console.log("callback: ", req.body.payload)
 
-	
-
-	const digest = crypto.createHmac('sha256', secret).update(JSON.stringify(req.body)).digest('hex')
-	console.log(digest, req.headers['x-razorpay-signature'])
-	
-	console.log(Razorpay.validateWebhookSignature(JSON.stringify(req.body), req.headers['x-razorpay-signature'], secret));
-	if (digest === req.headers['x-razorpay-signature']) {
-		console.log('request is legit')
-		if(req.body.event === 'subscription.authenticated'){
-			console.log('subscription.authenticated')
-		}
-		else if(req.body.event === 'subscription.activated'){
-			console.log('subscription.activated')
-		}
-		else if(req.body.event === 'subscription.charged'){
-			console.log('subscription.charged')
-		}
-		else if(req.body.event === 'subscription.cancelled'){
-			console.log('subscription.cancelled')
-		}
-		// process it
-	} else {
-		// pass it
-		console.log('request is not legit')
+	if(req.body.event === 'subscription.activated'){
+		// Sent when the subscription moves to the "active" state either from the "authenticated", "pending" or "halted" state
+		console.log('subscription.activated')
 	}
+	else if(req.body.event === 'subscription.charged'){
+		// Sent every time a successful charge is made on the subscription.
+		console.log('subscription.charged')
+	}
+	else if(req.body.event === 'subscription.completed'){
+		// Sent when all the invoices are generated for a subscription and the subscription moves to the completed state.
+		console.log('subscription.completed')
+	}
+	else if(req.body.event === 'subscription.updated'){
+		// Sent when a subscription is successfully updated. There is no state change when a subscription is updated.
+		console.log('subscription.updated')
+	}
+	else if(req.body.event === 'subscription.pending'){
+		// This happens when a charge on the card fails
+		// This happens when a charge on the card fails. We try to charge the card on a periodic basis while it is in the pending state. 
+		// If the payment fails again, the webhook is triggered again.
+		console.log('subscription.pending')
+	}
+	else if(req.body.event === 'subscription.halted'){
+		// Sent when all retries have been exhausted and the subscription moves from the pending state to the halted state.
+		console.log('subscription.halted')
+	}
+	else if(req.body.event === 'subscription.cancelled'){
+		// Sent when a subscription is cancelled and the subscription moves to the cancelled state.
+		console.log('subscription.cancelled')
+	}
+	else if(req.body.event === 'subscription.paused'){
+		// Sent when a subscription is paused and the subscription moves to the paused state.
+		console.log('subscription.paused')
+	}
+	else if(req.body.event === 'subscription.resumed'){
+		// Sent when a subscription is unpaused and the subscription moves to the resumed state.
+		console.log('subscription.resumed')
+	}
+	else{
+		// for normal order payments
+
+		const digest = crypto.createHmac('sha256', secret).update(JSON.stringify(req.body)).digest('hex')
+		console.log(digest, req.headers['x-razorpay-signature'])
+		
+		// console.log(Razorpay.validateWebhookSignature(JSON.stringify(req.body), req.headers['x-razorpay-signature'], secret));
+		if (digest === req.headers['x-razorpay-signature']) {
+			console.log('request is legit')		
+			// process it
+		} else {
+			// pass it
+			console.log('request is not legit')
+		}
+
+	}
+
+	
 	res.json({ status: 'ok' })
 })
 
@@ -60,7 +91,7 @@ app.post("/handler/verification/:sid", async (req, res) => {
 	console.log("handler callback: ", req.body)
 	const digest = crypto.createHmac('sha256', razorpay.key_secret).update(req.body.razorpay_payment_id + '|' + req.params.sid).digest('hex');
 	if(digest === req.body.razorpay_signature){
-		console.log('request is legit')
+		console.log('handler callback request is legit')
 		try {
 			const response = await razorpay.subscriptions.fetch(req.params.sid)
 			console.log("Fetch Result: ",response)
@@ -77,7 +108,7 @@ app.post("/handler/verification/:sid", async (req, res) => {
 		}
 		
 	}else{
-		console.log('request is not legit')
+		console.log('handler callback request is not legit')
 		return res.send({
 			statusCode: 401,
 			message: "Request is not legit"
